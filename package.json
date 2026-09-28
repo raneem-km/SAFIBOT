@@ -1,7 +1,13 @@
 {
-  "name": "safibot-monorepo",
+  "name": "safibot",
   "private": true,
+  "workspaces": [
+    "frontend"
+  ],
   "scripts": {
     "build": "cd frontend && npm install && npm run build"
+  },
+  "devDependencies": {
+    "vite": "^8.3.0"
   }
 }
