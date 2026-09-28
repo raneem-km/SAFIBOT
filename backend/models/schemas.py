@@ -60,7 +60,7 @@ class DocumentBase(BaseModel):
     title: str
     document_type: str  # syllabus, exam_timetable, class_timetable, academic_calendar, regulations
     course: Optional[str] = "ALL"
-    semester: Optional[int] = None
+    semester: Optional[Any] = None
     department: Optional[str] = "ALL"
     file_path: str
     source: Optional[str] = None
