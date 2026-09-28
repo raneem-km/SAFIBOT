@@ -15,18 +15,17 @@ ORIGINAL_CHROMA_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 
 
 if HAS_CHROMA:
     if IS_VERCEL:
-        TMP_CHROMA_PATH = os.path.join("/tmp", "chroma_db")
-        if not os.path.exists(TMP_CHROMA_PATH) and os.path.exists(ORIGINAL_CHROMA_PATH):
+        CHROMA_PATH = os.path.join("/tmp", "chroma_db")
+        if not os.path.exists(CHROMA_PATH) and os.path.exists(ORIGINAL_CHROMA_PATH):
             try:
-                shutil.copytree(ORIGINAL_CHROMA_PATH, TMP_CHROMA_PATH, dirs_exist_ok=True)
+                shutil.copytree(ORIGINAL_CHROMA_PATH, CHROMA_PATH, dirs_exist_ok=True)
             except Exception:
                 pass
-        CHROMA_PATH = TMP_CHROMA_PATH if os.path.exists(TMP_CHROMA_PATH) else ORIGINAL_CHROMA_PATH
     else:
         CHROMA_PATH = ORIGINAL_CHROMA_PATH
     COLLECTION_NAME = "safibot_knowledge"
 
-MEMORY_STORE_FILE = os.path.join("/tmp" if IS_VERCEL else os.path.dirname(os.path.dirname(__file__)), "database", "memory_chunks.json")
+MEMORY_STORE_FILE = os.path.join("/tmp", "memory_chunks.json") if IS_VERCEL else os.path.join(os.path.dirname(os.path.dirname(__file__)), "database", "memory_chunks.json")
 _memory_chunks = []
 
 def load_memory_chunks():
