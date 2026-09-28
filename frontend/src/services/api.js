@@ -40,6 +40,23 @@ function getHeaders(contentType = 'application/json') {
   return headers;
 }
 
+async function safeParseJson(res, defaultErrorMsg = 'Request failed') {
+  const text = await res.text();
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    if (!res.ok) {
+      throw new Error(`Server Error (${res.status}): ${text.slice(0, 150) || 'Internal server error'}`);
+    }
+    throw new Error('Received unexpected non-JSON response from server');
+  }
+  if (!res.ok) {
+    throw new Error(data.detail || data.message || defaultErrorMsg);
+  }
+  return data;
+}
+
 // ----------------- Auth Endpoints -----------------
 export async function registerStudent(registrationData) {
   const res = await fetch(`${API_BASE}/auth/register`, {
@@ -47,10 +64,7 @@ export async function registerStudent(registrationData) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(registrationData),
   });
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data.detail || 'Registration failed');
-  }
+  const data = await safeParseJson(res, 'Registration failed');
   setAuth(data.access_token, data.user);
   return data;
 }
@@ -61,10 +75,7 @@ export async function loginStudent(identifier, password) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ identifier, password }),
   });
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data.detail || 'Invalid email/admission number or password');
-  }
+  const data = await safeParseJson(res, 'Invalid email/admission number or password');
   setAuth(data.access_token, data.user);
   return data;
 }
@@ -75,10 +86,7 @@ export async function loginAdmin(identifier, password) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ identifier, password }),
   });
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data.detail || 'Invalid admin credentials');
-  }
+  const data = await safeParseJson(res, 'Invalid admin credentials');
   setAuth(data.access_token, data.user);
   return data;
 }

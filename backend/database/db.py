@@ -7,17 +7,19 @@ IS_VERCEL = os.getenv("VERCEL") == "1" or os.getenv("VERCEL_ENV") is not None
 ORIGINAL_DB_PATH = os.path.join(os.path.dirname(__file__), "safibot.db")
 
 if IS_VERCEL:
-    TMP_DB_PATH = os.path.join("/tmp", "safibot.db")
-    if not os.path.exists(TMP_DB_PATH) and os.path.exists(ORIGINAL_DB_PATH):
+    DB_PATH = os.path.join("/tmp", "safibot.db")
+    if not os.path.exists(DB_PATH) and os.path.exists(ORIGINAL_DB_PATH):
         try:
-            shutil.copy2(ORIGINAL_DB_PATH, TMP_DB_PATH)
+            shutil.copy2(ORIGINAL_DB_PATH, DB_PATH)
         except Exception:
             pass
-    DB_PATH = TMP_DB_PATH if os.path.exists(TMP_DB_PATH) else ORIGINAL_DB_PATH
 else:
     DB_PATH = ORIGINAL_DB_PATH
 
 def get_connection():
+    if IS_VERCEL and not os.path.exists(DB_PATH):
+        init_db()
+        seed_demo_data()
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
