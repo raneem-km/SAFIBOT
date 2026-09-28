@@ -1,23 +1,38 @@
-import pymupdf
 import re
 from typing import List, Dict, Any, Optional
 
+try:
+    import pymupdf
+    HAS_PYMUPDF = True
+except Exception:
+    HAS_PYMUPDF = False
+
+try:
+    import pypdf
+    HAS_PYPDF = True
+except Exception:
+    HAS_PYPDF = False
+from typing import List, Dict, Any, Optional
+
 def extract_text_by_pages(pdf_path: str) -> List[Dict[str, Any]]:
-    """
-    Extracts text page-by-page from a PDF using PyMuPDF.
-    Returns a list of dicts: [{"page": 1, "text": "..."}]
-    """
-    doc = pymupdf.open(pdf_path)
     pages_data = []
-    
-    for page_idx, page in enumerate(doc):
-        text = page.get_text("text")
-        pages_data.append({
-            "page": page_idx + 1,
-            "text": text.strip()
-        })
-        
-    doc.close()
+    if HAS_PYMUPDF:
+        try:
+            doc = pymupdf.open(pdf_path)
+            for page_idx, page in enumerate(doc):
+                pages_data.append({"page": page_idx + 1, "text": page.get_text("text").strip()})
+            doc.close()
+            return pages_data
+        except Exception:
+            pass
+    if HAS_PYPDF:
+        try:
+            reader = pypdf.PdfReader(pdf_path)
+            for page_idx, page in enumerate(reader.pages):
+                pages_data.append({"page": page_idx + 1, "text": (page.extract_text() or "").strip()})
+            return pages_data
+        except Exception:
+            pass
     return pages_data
 
 def chunk_pdf_pages(
