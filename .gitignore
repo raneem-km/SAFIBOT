@@ -32,3 +32,5 @@ scratch/
 *.log
 .DS_Store
 
+
+backend/database/memory_chunks.json
