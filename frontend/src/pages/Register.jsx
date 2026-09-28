@@ -2,19 +2,75 @@ import React, { useState } from 'react';
 import { UserPlus, Lock, Mail, User, Hash, BookOpen, GraduationCap, Building2, Calendar, Sparkles, AlertCircle, ArrowLeft } from 'lucide-react';
 import { registerStudent } from '../services/api';
 
-const COURSES = [
-  { course: 'BBA', dept: 'Management Studies' },
-  { course: 'BCA', dept: 'Computer Applications' },
-  { course: 'BCom', dept: 'Commerce' },
-  { course: 'BSc Computer Science', dept: 'Computer Science' },
-  { course: 'BA English Language & Literature', dept: 'English' },
-  { course: 'BA Sociology', dept: 'Sociology' },
-  { course: 'BSc Biotechnology', dept: 'Biotechnology' },
-  { course: 'BSc Microbiology', dept: 'Microbiology' },
-  { course: 'BSc Food Technology', dept: 'Food Technology' },
-  { course: 'MSc Computer Science', dept: 'Computer Science' },
-  { course: 'MCom', dept: 'Commerce' },
-  { course: 'MA Journalism & Mass Communication', dept: 'Journalism' },
+export const COURSE_GROUPS = [
+  {
+    category: 'Undergraduate Programmes (15 UG Honours)',
+    courses: [
+      { course: 'Bachelor of Computer Application (BCA) Honours', dept: 'Department of Computer Applications', duration: '4 Years' },
+      { course: 'B.Sc. Computer Science Honours', dept: 'Department of Computer Science', duration: '4 Years' },
+      { course: 'B.Sc. Artificial Intelligence Honours', dept: 'Department of Computer Science', duration: '4 Years' },
+      { course: 'BBA Honours', dept: 'Department of Management Studies', duration: '4 Years' },
+      { course: 'B.Com Honours (Finance)', dept: 'Department of Commerce', duration: '4 Years' },
+      { course: 'B.Com Honours (Islamic Finance)', dept: 'Department of Commerce', duration: '4 Years' },
+      { course: 'B.Sc. Biotechnology Honours', dept: 'Department of Biotechnology', duration: '4 Years' },
+      { course: 'B.Sc. Food Technology Honours', dept: 'Department of Food Technology', duration: '4 Years' },
+      { course: 'B.Sc. Microbiology Honours', dept: 'Department of Microbiology', duration: '4 Years' },
+      { course: 'B.Sc. Physics Honours with Data Science & AI', dept: 'Department of Physics', duration: '4 Years' },
+      { course: 'B.Sc. Psychology Honours', dept: 'Department of Psychology', duration: '4 Years' },
+      { course: 'B.A. Economics Honours', dept: 'Department of Economics', duration: '4 Years' },
+      { course: 'B.A. English Honours (Language and Literature)', dept: 'Department of English', duration: '4 Years' },
+      { course: 'B.A. Multimedia Honours', dept: 'Department of Journalism & Mass Communication', duration: '4 Years' },
+      { course: 'B.A. Public Administration Honours', dept: 'Department of Economics', duration: '4 Years' },
+    ]
+  },
+  {
+    category: 'Integrated Teacher Education (2 ITEP Programmes - 4 Years)',
+    courses: [
+      { course: 'B.Sc. B.Ed. Secondary', dept: 'Department of Education (ITEP)', duration: '4 Years' },
+      { course: 'B.A. B.Ed. Secondary', dept: 'Department of Education (ITEP)', duration: '4 Years' },
+    ]
+  },
+  {
+    category: 'Postgraduate Programmes (PG - 2 Years)',
+    courses: [
+      { course: 'MBA (Master of Business Administration)', dept: 'Department of Management Studies', duration: '2 Years' },
+      { course: 'M.Com (Finance)', dept: 'Department of Commerce', duration: '2 Years' },
+      { course: 'M.Sc. General Biotechnology', dept: 'Department of Biotechnology', duration: '2 Years' },
+      { course: 'M.Sc. Food Science & Technology', dept: 'Department of Food Technology', duration: '2 Years' },
+      { course: 'M.Sc. Microbiology', dept: 'Department of Microbiology', duration: '2 Years' },
+      { course: 'M.Sc. Psychology', dept: 'Department of Psychology', duration: '2 Years' },
+      { course: 'M.A. Journalism & Mass Communication', dept: 'Department of Journalism & Mass Communication', duration: '2 Years' },
+      { course: 'M.A. Islamic Studies', dept: 'Department of Islamic Studies', duration: '2 Years' },
+      { course: 'MSW (Master of Social Work)', dept: 'Department of Social Work', duration: '2 Years' },
+    ]
+  },
+  {
+    category: 'Doctoral Programmes (PhD)',
+    courses: [
+      { course: 'Ph.D. in Biotechnology', dept: 'Department of Biotechnology', duration: '3-5 Years' },
+      { course: 'Ph.D. in Islamic Studies', dept: 'Department of Islamic Studies', duration: '3-5 Years' },
+    ]
+  }
+];
+
+export const ALL_COURSES = COURSE_GROUPS.flatMap(g => g.courses);
+
+export const DEPARTMENTS = [
+  'Department of Computer Applications',
+  'Department of Computer Science',
+  'Department of Management Studies',
+  'Department of Commerce',
+  'Department of Biotechnology',
+  'Department of Food Technology',
+  'Department of Microbiology',
+  'Department of Physics',
+  'Department of Psychology',
+  'Department of Economics',
+  'Department of English',
+  'Department of Journalism & Mass Communication',
+  'Department of Islamic Studies',
+  'Department of Social Work',
+  'Department of Education (ITEP)',
 ];
 
 export default function Register({ onRegisterSuccess, onNavigateLogin }) {
@@ -24,10 +80,10 @@ export default function Register({ onRegisterSuccess, onNavigateLogin }) {
     admission_number: '',
     email: '',
     password: '',
-    course: 'BBA',
-    department: 'Management Studies',
+    course: 'Bachelor of Computer Application (BCA) Honours',
+    department: 'Department of Computer Applications',
     semester: 3,
-    batch: '2024-2027',
+    batch: '2024-2028',
     interests: '',
   });
 
@@ -36,7 +92,7 @@ export default function Register({ onRegisterSuccess, onNavigateLogin }) {
 
   const handleCourseChange = (e) => {
     const selectedCourse = e.target.value;
-    const found = COURSES.find((c) => c.course === selectedCourse);
+    const found = ALL_COURSES.find((c) => c.course === selectedCourse);
     setFormData((prev) => ({
       ...prev,
       course: selectedCourse,
@@ -216,10 +272,14 @@ export default function Register({ onRegisterSuccess, onNavigateLogin }) {
                 onChange={handleCourseChange}
                 className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-800 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-hidden cursor-pointer"
               >
-                {COURSES.map((c) => (
-                  <option key={c.course} value={c.course}>
-                    {c.course}
-                  </option>
+                {COURSE_GROUPS.map((group) => (
+                  <optgroup key={group.category} label={group.category}>
+                    {group.courses.map((c) => (
+                      <option key={c.course} value={c.course}>
+                        {c.course} ({c.duration})
+                      </option>
+                    ))}
+                  </optgroup>
                 ))}
               </select>
             </div>
@@ -227,16 +287,21 @@ export default function Register({ onRegisterSuccess, onNavigateLogin }) {
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              Department
+              Department *
             </label>
             <div className="relative">
               <Building2 className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-              <input
-                type="text"
+              <select
                 value={formData.department}
                 onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-800 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
-              />
+                className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-800 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-hidden cursor-pointer"
+              >
+                {DEPARTMENTS.map((dept) => (
+                  <option key={dept} value={dept}>
+                    {dept}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </div>
@@ -254,7 +319,7 @@ export default function Register({ onRegisterSuccess, onNavigateLogin }) {
                 onChange={(e) => setFormData({ ...formData, semester: Number(e.target.value) })}
                 className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-800 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-hidden cursor-pointer"
               >
-                {[1, 2, 3, 4, 5, 6].map((s) => (
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((s) => (
                   <option key={s} value={s}>
                     Semester {s}
                   </option>

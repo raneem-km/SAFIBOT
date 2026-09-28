@@ -36,15 +36,16 @@ def classify_query_intent(query: str) -> str:
     if any(k in q for k in ["event", "events", "workshop", "fest", "hackathon", "seminar", "webinar", "conclave"]):
         return "events"
 
-    # Notices / announcements
-    if any(k in q for k in ["notice", "notices", "announcement", "circular"]):
+    # Notices / announcements / news / circulars / updates
+    if any(k in q for k in ["notice", "notices", "announcement", "announcements", "circular", "circulars", "news", "latest news", "college news", "update", "updates", "bulletin"]):
         return "notices"
 
-    # Website Structured Questions (Programmes, Departments, HODs, Counts)
+    # Website Structured Questions (Programmes, Departments, HODs, Counts, Faculty)
     if any(k in q for k in [
         "how many ug", "how many pg", "how many programmes", "how many courses",
         "how many departments", "what departments", "list departments", "departments are there",
-        "who is the hod", "head of the department", "hod of",
+        "who is the hod", "head of the department", "hod of", "head of department", "who is the head",
+        "haneesh", "shabeerali", "shabeer", "hod",
         "programmes offered", "programmes are offered", "courses offered", "courses are offered",
         "programmes does", "courses in", "offered by the", "offered by",
         "programmes available", "programmes in", "courses available", "what programmes", "which programmes",

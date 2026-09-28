@@ -47,8 +47,17 @@ export default function NoticeCard({ notice }) {
           <span className="text-slate-600">No deadline</span>
         )}
 
-        <div className="text-[11px] text-slate-600 flex items-center gap-1">
-          <FileText className="w-3 h-3 text-slate-600" />
+        <div className="text-[11px] text-slate-600 flex items-center gap-2">
+          {notice.file_path && (
+            <a
+              href={notice.file_path}
+              target="_blank"
+              rel="noreferrer"
+              className="font-semibold text-emerald-700 hover:text-emerald-800 hover:underline flex items-center gap-1"
+            >
+              <span>View Official PDF ↗</span>
+            </a>
+          )}
           <span className="truncate max-w-[140px]" title={notice.source}>
             {notice.source || 'Notice Board'}
           </span>

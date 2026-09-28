@@ -95,47 +95,57 @@ export default function DocumentsView({ activeStudent }) {
             <span className="text-xs text-slate-600">Total: {filteredDocs.length} documents</span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredDocs.map((doc) => (
-              <div
-                key={doc.id}
-                className="bg-white rounded-xl border border-slate-200 p-5 hover:border-emerald-300 hover:shadow-md transition-all flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-center justify-between gap-2 mb-3">
-                    <span className="text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md border border-slate-200">
-                      {doc.document_type.replace('_', ' ')}
-                    </span>
-                    <span className="text-xs text-slate-600">
-                      {doc.upload_date}
-                    </span>
+          {filteredDocs.length === 0 ? (
+            <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center max-w-md mx-auto my-6">
+              <FileText className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+              <h3 className="font-semibold text-slate-800 text-sm mb-1">No Academic PDFs Uploaded</h3>
+              <p className="text-xs text-slate-500">
+                Official syllabus and academic circulars will appear here once uploaded by the college administration.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredDocs.map((doc) => (
+                <div
+                  key={doc.id}
+                  className="bg-white rounded-xl border border-slate-200 p-5 hover:border-emerald-300 hover:shadow-md transition-all flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-center justify-between gap-2 mb-3">
+                      <span className="text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md border border-slate-200">
+                        {doc.document_type.replace('_', ' ')}
+                      </span>
+                      <span className="text-xs text-slate-600">
+                        {doc.upload_date}
+                      </span>
+                    </div>
+
+                    <h3 className="font-bold text-slate-900 text-sm mb-2 leading-snug">
+                      {doc.title}
+                    </h3>
+
+                    <div className="text-xs text-slate-600 space-y-1 mb-4">
+                      <p>Course: <strong className="text-slate-700">{doc.course}</strong> {doc.semester ? `(Sem ${doc.semester})` : ''}</p>
+                      <p>Source: <span className="text-slate-600">{doc.source || 'College Portal'}</span></p>
+                      <p>Total Pages: <span className="text-slate-700">{doc.total_pages || 1}</span></p>
+                    </div>
                   </div>
 
-                  <h3 className="font-bold text-slate-900 text-sm mb-2 leading-snug">
-                    {doc.title}
-                  </h3>
-
-                  <div className="text-xs text-slate-600 space-y-1 mb-4">
-                    <p>Course: <strong className="text-slate-700">{doc.course}</strong> {doc.semester ? `(Sem ${doc.semester})` : ''}</p>
-                    <p>Source: <span className="text-slate-600">{doc.source || 'College Portal'}</span></p>
-                    <p>Total Pages: <span className="text-slate-700">{doc.total_pages || 1}</span></p>
+                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                    <a
+                      href={doc.file_path && doc.file_path.startsWith('http') ? doc.file_path : `/api/documents/${doc.id}/file`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 hover:text-emerald-800"
+                    >
+                      <FileText className="w-4 h-4" />
+                      <span>{doc.file_path && doc.file_path.startsWith('http') ? 'Open Official Document ↗' : 'View / Download PDF'}</span>
+                    </a>
                   </div>
                 </div>
-
-                <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                  <a
-                    href={`/api/documents/${doc.id}/file`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 hover:text-emerald-800"
-                  >
-                    <FileText className="w-4 h-4" />
-                    <span>View / Download PDF</span>
-                  </a>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
       ) : (

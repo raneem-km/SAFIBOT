@@ -336,9 +336,9 @@ def seed_demo_data():
                 "Dept of Management Studies Memo #MS/26/14", "PDF", None, 1
             ),
             (
-                "Post-Matric Scholarship Renewal",
+                "College Scholarship Scheme",
                 "Scholarship",
-                "Eligible students can apply for post-matric scholarship renewal on the national scholarship portal. Upload fee receipts and mark lists.",
+                "Eligible students can apply for the college scholarship scheme through the college portal. Submit fee receipts and academic mark lists to the Student Welfare Cell.",
                 "ALL", "ALL", "ALL",
                 "2026-09-15", "2026-10-20",
                 "Student Welfare Cell Circular #SW/2026/05", "Notice Board", None, 1
@@ -363,7 +363,7 @@ def seed_demo_data():
             (
                 "SAFI Innovate Tech Fest 2026",
                 "Annual inter-collegiate technology fest featuring hackathon, web design competition, and technical quiz.",
-                "2026-10-18", "09:30 AM", "Auditorium & Lab 1", "Computer Applications Association",
+                "2026-10-18", "09:30 AM", "Auditorium & Lab 1", "Department of Computer Applications",
                 "ALL", "ALL", "ALL", "2026-10-14",
                 "TechFest Committee Circular", 1
             ),
@@ -406,6 +406,27 @@ def seed_demo_data():
             ("BCom", 3, "2026-10-27", "Advanced Financial Accounting", "09:30 AM - 12:30 PM", "Exam Hall 5", 1, None, 4, "End Semester Exam Schedule Nov 2026, Page 4"),
             ("BCom", 3, "2026-10-29", "Corporate Regulations", "09:30 AM - 12:30 PM", "Exam Hall 5", 1, None, 4, "End Semester Exam Schedule Nov 2026, Page 4"),
 
+            # BCA Semester 5 Exam Timetable
+            ("BCA", 5, "2026-11-04", "Web Programming with PHP & MySQL", "09:30 AM - 12:30 PM", "Lab 2", 1, None, 1, "End Semester Exam Schedule Nov 2026, Page 5"),
+            ("BCA", 5, "2026-11-06", "Python & Machine Learning Fundamentals", "09:30 AM - 12:30 PM", "Lab 2", 1, None, 1, "End Semester Exam Schedule Nov 2026, Page 5"),
+            ("BCA", 5, "2026-11-09", "Principles of Software Engineering", "09:30 AM - 12:30 PM", "Exam Hall 3", 1, None, 1, "End Semester Exam Schedule Nov 2026, Page 5"),
+
+            # BCom Semester 5 Exam Timetable
+            ("BCom", 5, "2026-11-05", "Income Tax Law & Accounts", "09:30 AM - 12:30 PM", "Exam Hall 5", 1, None, 4, "End Semester Exam Schedule Nov 2026, Page 4"),
+            ("BCom", 5, "2026-11-08", "Financial Markets & Services", "09:30 AM - 12:30 PM", "Exam Hall 5", 1, None, 4, "End Semester Exam Schedule Nov 2026, Page 4"),
+
+            # BSc Computer Science Semester 1 Exam Timetable
+            ("BSc Computer Science", 1, "2026-11-10", "Problem Solving Using C", "09:30 AM - 12:30 PM", "Exam Hall 1", 1, None, 6, "End Semester Exam Schedule Nov 2026, Page 6"),
+            ("BSc Computer Science", 1, "2026-11-12", "Discrete Mathematics", "09:30 AM - 12:30 PM", "Exam Hall 1", 1, None, 6, "End Semester Exam Schedule Nov 2026, Page 6"),
+            ("BSc Computer Science", 3, "2026-10-26", "Data Structures Using C++", "09:30 AM - 12:30 PM", "Exam Hall 1", 1, None, 6, "End Semester Exam Schedule Nov 2026, Page 6"),
+            ("BSc Computer Science", 3, "2026-10-28", "Operating Systems & Linux Shell", "09:30 AM - 12:30 PM", "Exam Hall 1", 1, None, 6, "End Semester Exam Schedule Nov 2026, Page 6"),
+
+            # BSc Artificial Intelligence Exam Timetable
+            ("B.Sc. Artificial Intelligence Honours", 1, "2026-11-10", "Python Programming & AI Fundamentals", "09:30 AM - 12:30 PM", "AI Lab 1", 1, None, 7, "End Semester Exam Schedule Nov 2026, Page 7"),
+            ("B.Sc. Artificial Intelligence Honours", 1, "2026-11-12", "Discrete Mathematics & Linear Algebra", "09:30 AM - 12:30 PM", "AI Lab 1", 1, None, 7, "End Semester Exam Schedule Nov 2026, Page 7"),
+            ("B.Sc. Artificial Intelligence Honours", 3, "2026-11-04", "Machine Learning & Neural Networks", "09:30 AM - 12:30 PM", "AI Lab 1", 1, None, 7, "End Semester Exam Schedule Nov 2026, Page 7"),
+            ("B.Sc. Artificial Intelligence Honours", 3, "2026-11-06", "Data Structures with Python", "09:30 AM - 12:30 PM", "AI Lab 1", 1, None, 7, "End Semester Exam Schedule Nov 2026, Page 7"),
+
             # BBA Semester 3 Regular Class Timetable (is_exam = 0)
             ("BBA", 3, "Monday", "Financial Management", "09:30 AM - 10:30 AM", "Room 204", 0, None, 1, "BBA S3 Class Routine 2026"),
             ("BBA", 3, "Monday", "Marketing Management", "10:30 AM - 11:30 AM", "Room 204", 0, None, 1, "BBA S3 Class Routine 2026"),
@@ -415,6 +436,147 @@ def seed_demo_data():
         INSERT INTO timetables (course, semester, day_or_date, subject, time, room, is_exam, document_id, page_number, source)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
         """, demo_timetables)
+    else:
+        # Ensure timetables for BCA 5, BCom 5, BSc CS, BSc AI exist if table was already populated
+        cursor.execute("SELECT COUNT(*) FROM timetables WHERE course LIKE '%Artificial Intelligence%';")
+        if cursor.fetchone()[0] == 0:
+            extra_timetables = [
+                ("BCA", 5, "2026-11-04", "Web Programming with PHP & MySQL", "09:30 AM - 12:30 PM", "Lab 2", 1, None, 1, "End Semester Exam Schedule Nov 2026, Page 5"),
+                ("BCA", 5, "2026-11-06", "Python & Machine Learning Fundamentals", "09:30 AM - 12:30 PM", "Lab 2", 1, None, 1, "End Semester Exam Schedule Nov 2026, Page 5"),
+                ("BCA", 5, "2026-11-09", "Principles of Software Engineering", "09:30 AM - 12:30 PM", "Exam Hall 3", 1, None, 1, "End Semester Exam Schedule Nov 2026, Page 5"),
+                ("BCom", 5, "2026-11-05", "Income Tax Law & Accounts", "09:30 AM - 12:30 PM", "Exam Hall 5", 1, None, 4, "End Semester Exam Schedule Nov 2026, Page 4"),
+                ("BCom", 5, "2026-11-08", "Financial Markets & Services", "09:30 AM - 12:30 PM", "Exam Hall 5", 1, None, 4, "End Semester Exam Schedule Nov 2026, Page 4"),
+                ("BSc Computer Science", 1, "2026-11-10", "Problem Solving Using C", "09:30 AM - 12:30 PM", "Exam Hall 1", 1, None, 6, "End Semester Exam Schedule Nov 2026, Page 6"),
+                ("BSc Computer Science", 1, "2026-11-12", "Discrete Mathematics", "09:30 AM - 12:30 PM", "Exam Hall 1", 1, None, 6, "End Semester Exam Schedule Nov 2026, Page 6"),
+                ("BSc Computer Science", 3, "2026-10-26", "Data Structures Using C++", "09:30 AM - 12:30 PM", "Exam Hall 1", 1, None, 6, "End Semester Exam Schedule Nov 2026, Page 6"),
+                ("BSc Computer Science", 3, "2026-10-28", "Operating Systems & Linux Shell", "09:30 AM - 12:30 PM", "Exam Hall 1", 1, None, 6, "End Semester Exam Schedule Nov 2026, Page 6"),
+                ("B.Sc. Artificial Intelligence Honours", 1, "2026-11-10", "Python Programming & AI Fundamentals", "09:30 AM - 12:30 PM", "AI Lab 1", 1, None, 7, "End Semester Exam Schedule Nov 2026, Page 7"),
+                ("B.Sc. Artificial Intelligence Honours", 1, "2026-11-12", "Discrete Mathematics & Linear Algebra", "09:30 AM - 12:30 PM", "AI Lab 1", 1, None, 7, "End Semester Exam Schedule Nov 2026, Page 7"),
+                ("B.Sc. Artificial Intelligence Honours", 3, "2026-11-04", "Machine Learning & Neural Networks", "09:30 AM - 12:30 PM", "AI Lab 1", 1, None, 7, "End Semester Exam Schedule Nov 2026, Page 7"),
+                ("B.Sc. Artificial Intelligence Honours", 3, "2026-11-06", "Data Structures with Python", "09:30 AM - 12:30 PM", "AI Lab 1", 1, None, 7, "End Semester Exam Schedule Nov 2026, Page 7"),
+            ]
+            cursor.executemany("""
+            INSERT INTO timetables (course, semester, day_or_date, subject, time, room, is_exam, document_id, page_number, source)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+            """, extra_timetables)
+
+    # Apply database updates for scholarship renaming and association removal
+    cursor.execute("UPDATE notices SET title = 'College Scholarship Scheme', content = 'Eligible students can apply for the college scholarship scheme through the portal. Submit required mark sheets and certificates to the Student Welfare Cell.' WHERE title LIKE '%Post-Matric%Scholarship%' OR title LIKE '%Post-Matric%';")
+    cursor.execute("UPDATE events SET organizer = 'Department of Computer Applications' WHERE organizer LIKE '%Computer Applications Association%' OR organizer = 'Computer Applications Association';")
+
+    # Remove dummy seeded PDFs
+    cursor.execute("DELETE FROM documents WHERE file_path LIKE '%data\\syllabus%' OR file_path LIKE '%data/syllabus%' OR file_path LIKE '%data\\timetables%' OR file_path LIKE '%data/timetables%' OR file_path LIKE '%data\\academic%' OR file_path LIKE '%data/academic%';")
+
+    # Ensure authentic college website notifications and notification PDFs exist
+    official_website_notices = [
+        (
+            "Final Electoral Roll Notification (Students' Union Election 2026)",
+            "Notification",
+            "The Returning Officer has officially published the Final Electoral Roll for the College Students' Union Election 2026. All enrolled students are instructed to verify their names on the published electoral roll.",
+            "ALL", "ALL", "ALL",
+            "2026-09-26", "2026-10-05",
+            "Official Notification PDF (Final Electoral Roll-2.pdf) — SIAS Website", "PDF", "https://drive.google.com/file/d/1m1JlFIN1-VMfkWe0hm_Jb_noSwnC6T_8/view?usp=drivesdk", 1
+        ),
+        (
+            "Def-Space Autumn Internship Programme 2026",
+            "Academic & Career",
+            "Applications are open for the Def-Space Autumn Internship 2026 for students of Computer Applications, Computer Science, and AI. Work on defense technology and embedded computing.",
+            "ALL", "ALL", "ALL",
+            "2026-09-24", "2026-10-15",
+            "SIAS Career & Internship Portal Circular", "Document", "https://docs.google.com/document/d/1207lEBcRbqb9R9-5ybsBOUpxzYpl_DLgIJfhI6MF5Vk/edit", 1
+        ),
+        (
+            "College Scholarship Scheme & Student Welfare",
+            "Scholarship",
+            "Eligible students can apply for the college scholarship scheme through the portal. Submit required mark sheets and income certificates to the Student Welfare & Equal Opportunity Cell.",
+            "ALL", "ALL", "ALL",
+            "2026-09-18", "2026-10-20",
+            "Student Support & Welfare Cell (sias.edu.in/stdzone/)", "Notice Board", "https://sias.edu.in/stdzone/index.html", 1
+        ),
+        (
+            "Automated Central Library Book Return & Digital Repository Notice",
+            "Library",
+            "All students who borrowed semester books must return or renew them at the circulation desk. Institutional repository, previous question papers and Plagiarism CheckerX software are accessible at the Central Library.",
+            "ALL", "ALL", "ALL",
+            "2026-09-25", "2026-10-10",
+            "Central Library and Information Centre (sias.edu.in/library.html)", "Notice Board", "https://sias.edu.in/library.html", 1
+        ),
+        (
+            "SIAS Autonomous Academic Regulations & Prospectus Publication",
+            "Academic",
+            "Autonomous college academic regulations, FYUGP honours curriculum frameworks, and course catalogues are published for student download and reference.",
+            "ALL", "ALL", "ALL",
+            "2026-09-15", None,
+            "SIAS Official Academic Prospectus (sias.edu.in/docs/prospectus.pdf)", "PDF", "https://sias.edu.in/docs/prospectus.pdf", 1
+        )
+    ]
+    for n in official_website_notices:
+        cursor.execute("SELECT id FROM notices WHERE title = ?;", (n[0],))
+        if not cursor.fetchone():
+            cursor.execute("""
+            INSERT INTO notices (title, category, content, target_course, target_department, target_semester, date, deadline, source, source_type, file_path, is_approved)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+            """, n)
+
+    # Ensure authentic college website events from sias.edu.in API exist
+    official_website_events = [
+        (
+            "BRANDRISE — Turning Passion into Products",
+            "Branding, product identity and entrepreneurship programme organized jointly with Kudumbashree Mission for students and community entrepreneurs.",
+            "2026-09-22", "10:00 AM", "College Auditorium", "Department of Multimedia",
+            "ALL", "ALL", "ALL", "2026-09-21",
+            "SIAS Official Website Events (sias.edu.in/events.html)", 1
+        ),
+        (
+            "Autobiography & Biography Book Exhibition",
+            "Special book exhibition organized by Central Library showcasing the lives, journeys, and writings of remarkable personalities.",
+            "2026-09-16", "09:30 AM - 04:30 PM", "Central Library & Information Centre", "Central Automated Library",
+            "ALL", "ALL", "ALL", None,
+            "SIAS Official Website Events (sias.edu.in/events.html)", 1
+        ),
+        (
+            "Micro Write 2026: Global Essay Competition",
+            "International academic essay contest on One Health and the Microbial World with certificates and awards for top student entries.",
+            "2026-09-17", "11:00 AM", "AV Seminar Hall", "PG and Research Department of Microbiology",
+            "ALL", "ALL", "ALL", "2026-09-15",
+            "SIAS Official Website Events (sias.edu.in/events.html)", 1
+        ),
+        (
+            "ESPRIT DE CORPS 2026: Inter-Department Management Fest",
+            "Annual inter-department management fest featuring business pitches, marketing challenges, and corporate simulation competitions.",
+            "2026-10-08", "09:30 AM", "Amphitheatre & Seminar Hall", "Department of Management Studies",
+            "ALL", "ALL", "ALL", "2026-10-05",
+            "SIAS Official Website Events (sias.edu.in/events.html)", 1
+        ),
+        (
+            "National Conference on Indian Knowledge Systems and Islamic Studies",
+            "National research conference bringing together scholars on indigenous knowledge systems, philosophy, and history.",
+            "2026-09-25", "10:00 AM", "PMA Seminar Hall", "PG & Research Department of Islamic Studies",
+            "ALL", "ALL", "ALL", "2026-09-23",
+            "SIAS Official Website Events (sias.edu.in/events.html)", 1
+        )
+    ]
+    for e in official_website_events:
+        cursor.execute("SELECT id FROM events WHERE title = ?;", (e[0],))
+        if not cursor.fetchone():
+            cursor.execute("""
+            INSERT INTO events (title, description, date, time, venue, organizer, target_course, target_department, target_semester, registration_deadline, source, is_approved)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+            """, e)
+
+    # Ensure real official website documents are registered in documents table
+    official_docs = [
+        ("SIAS Autonomous Prospectus & Regulations", "regulations", "https://sias.edu.in/docs/prospectus.pdf", 48, "ALL", "ALL", "ALL", "Official College Website", "2026-09-26"),
+        ("College Union Election Final Electoral Roll Notification", "notice", "https://drive.google.com/file/d/1m1JlFIN1-VMfkWe0hm_Jb_noSwnC6T_8/view?usp=drivesdk", 12, "ALL", "ALL", "ALL", "Returning Officer Notification PDF", "2026-09-26"),
+        ("Def-Space Autumn Internship Notification", "circular", "https://docs.google.com/document/d/1207lEBcRbqb9R9-5ybsBOUpxzYpl_DLgIJfhI6MF5Vk/edit", 2, "ALL", "ALL", "ALL", "SIAS Career & Internship Portal", "2026-09-26")
+    ]
+    for doc in official_docs:
+        cursor.execute("SELECT id FROM documents WHERE title = ?;", (doc[0],))
+        if not cursor.fetchone():
+            cursor.execute("""
+            INSERT INTO documents (title, document_type, file_path, total_pages, course, semester, department, source, upload_date)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+            """, doc)
 
     # Seed Departments
     cursor.execute("SELECT COUNT(*) FROM departments;")
@@ -490,7 +652,7 @@ def seed_demo_data():
     cursor.execute("SELECT COUNT(*) FROM faculty;")
     if cursor.fetchone()[0] == 0:
         demo_faculty = [
-            ("Dr. Shabeerali P.", "Head of the Department (HOD) & Assistant Professor", "Department of Computer Applications", "https://sias.edu.in/", "2026-09-27"),
+            ("Mr. Muhammed Haneesh K.P", "Head of the Department (HOD) & Assistant Professor", "Department of Computer Applications", "https://sias.edu.in/academics/computer-applications/faculty.html", "2026-09-27"),
             ("Dr. A.K. Haris", "Head of the Department (HOD) & Associate Professor", "Department of Management Studies", "https://sias.edu.in/", "2026-09-27"),
             ("Prof. C.P. Abdul Majeed", "Head of the Department (HOD) & Professor", "Department of Commerce", "https://sias.edu.in/", "2026-09-27"),
             ("Dr. Servin Wesley", "Head of the Department (HOD) & Associate Professor", "Department of Biotechnology", "https://sias.edu.in/", "2026-09-27"),

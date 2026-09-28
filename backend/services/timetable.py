@@ -12,26 +12,40 @@ def get_timetable_rows(course: str, semester: int, is_exam: Optional[int] = None
     
     clean_course = course.strip().upper().replace(".", "")
     
+    # Extract core course keyword for robust matching across Honours / Degree aliases
+    if "ARTIFICIAL INTELLIGENCE" in clean_course or " AI " in f" {clean_course} ":
+        keyword = "ARTIFICIAL INTELLIGENCE"
+    elif "COMPUTER APPLICATION" in clean_course or "BCA" in clean_course:
+        keyword = "BCA"
+    elif "COMPUTER SCIENCE" in clean_course or "CS" in clean_course:
+        keyword = "COMPUTER SCIENCE"
+    elif "BBA" in clean_course or "BUSINESS ADMINISTRATION" in clean_course:
+        keyword = "BBA"
+    elif "BCOM" in clean_course or "COMMERCE" in clean_course:
+        keyword = "BCOM"
+    else:
+        keyword = clean_course.split()[0] if clean_course else ""
+
     # Query with LIKE or exact match on course
     if is_exam is not None:
         query = """
         SELECT id, course, semester, day_or_date, subject, time, room, is_exam, document_id, page_number, source
         FROM timetables
-        WHERE (UPPER(REPLACE(course, '.', '')) = ? OR UPPER(course) LIKE ?)
+        WHERE (UPPER(REPLACE(course, '.', '')) = ? OR UPPER(course) LIKE ? OR ? LIKE '%' || UPPER(REPLACE(course, '.', '')) || '%')
           AND semester = ?
           AND is_exam = ?
         ORDER BY day_or_date ASC, time ASC;
         """
-        cursor.execute(query, (clean_course, f"%{clean_course}%", semester, is_exam))
+        cursor.execute(query, (clean_course, f"%{keyword}%", clean_course, semester, is_exam))
     else:
         query = """
         SELECT id, course, semester, day_or_date, subject, time, room, is_exam, document_id, page_number, source
         FROM timetables
-        WHERE (UPPER(REPLACE(course, '.', '')) = ? OR UPPER(course) LIKE ?)
+        WHERE (UPPER(REPLACE(course, '.', '')) = ? OR UPPER(course) LIKE ? OR ? LIKE '%' || UPPER(REPLACE(course, '.', '')) || '%')
           AND semester = ?
         ORDER BY is_exam DESC, day_or_date ASC, time ASC;
         """
-        cursor.execute(query, (clean_course, f"%{clean_course}%", semester))
+        cursor.execute(query, (clean_course, f"%{keyword}%", clean_course, semester))
         
     rows = [dict(row) for row in cursor.fetchall()]
     conn.close()

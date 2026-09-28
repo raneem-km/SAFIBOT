@@ -26,6 +26,14 @@ export default function Chatbot({ activeStudent }) {
     scrollToBottom();
   }, [messages, loading]);
 
+  useEffect(() => {
+    const prefill = sessionStorage.getItem('safibot_prefill_query');
+    if (prefill) {
+      sessionStorage.removeItem('safibot_prefill_query');
+      handleSend(prefill);
+    }
+  }, []);
+
   const quickQuestions = [
     "How many UG programmes are available?",
     "How many PG programmes are available?",

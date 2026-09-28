@@ -9,9 +9,15 @@ def is_item_relevant_to_student(student: Dict[str, Any], item: Dict[str, Any]) -
     if not student:
         return True
         
+    s_id = str(student.get("id", "")).lower()
+    s_role = str(student.get("role", "")).upper()
     s_course = str(student.get("course", "")).strip().upper()
     s_dept = str(student.get("department", "")).strip().upper()
     s_sem = str(student.get("semester", "")).strip()
+
+    # Campus visitor / Guest mode or general course sees all approved college items
+    if s_id == "guest" or s_role == "GUEST" or s_course in ["ALL", "GUEST", ""]:
+        return True
 
     # 1. Course Filter
     target_course = str(item.get("target_course", "ALL") or "ALL").strip().upper()
@@ -19,7 +25,17 @@ def is_item_relevant_to_student(student: Dict[str, Any], item: Dict[str, Any]) -
         # Split multiple courses: "BBA, BCA" or "BBA/BCA"
         courses = [c.strip().replace(".", "") for c in target_course.replace("/", ",").split(",")]
         clean_s_course = s_course.replace(".", "")
-        if not any(c in clean_s_course or clean_s_course in c for c in courses):
+        
+        def match_c(target_c: str, s_c: str) -> bool:
+            if target_c in s_c or s_c in target_c:
+                return True
+            if target_c in ["AI", "BSC AI"] and ("ARTIFICIAL INTELLIGENCE" in s_c or " AI " in f" {s_c} "):
+                return True
+            if target_c in ["CS", "BSC CS"] and ("COMPUTER SCIENCE" in s_c or " CS " in f" {s_c} "):
+                return True
+            return False
+
+        if not any(match_c(c, clean_s_course) for c in courses):
             return False
 
     # 2. Semester Filter

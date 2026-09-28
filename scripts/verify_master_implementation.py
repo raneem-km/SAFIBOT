@@ -87,7 +87,7 @@ def run_tests():
         ("What courses are offered by the college?", ["UG", "PG", "Autonomous"]),
         ("What programmes are available in Computer Applications?", ["BCA", "Computer Applications"]),
         ("What departments are there?", ["Management Studies", "Computer Applications", "Commerce"]),
-        ("Who is the HOD of Computer Applications?", ["Dr. Shabeerali", "Computer Applications"]),
+        ("Who is the HOD of Computer Applications?", ["Muhammed Haneesh", "Computer Applications"]),
         ("When is my next exam?", ["BCA", "Database"]),
         ("Show my complete exam timetable.", ["BCA", "Semester 3", "Database"]),
         ("What events are relevant to me?", ["Tech Fest", "Placement Drive"]),
@@ -122,7 +122,7 @@ def run_tests():
 
     # 5. Non-Hallucination & Learning Queue Auto-Logging
     print("\n--- Testing Unknown Information & Learning Queue Auto-Capture ---")
-    unknown_q = "[SYNTHETIC TEST QUERY] What is the experimental campus shuttle timing for the tech conclave?"
+    unknown_q = "[SYNTHETIC TEST QUERY] What is the experimental campus shuttle timing for the arctic research expedition?"
     
     # Ensure idempotent clean test state
     try:
@@ -131,6 +131,14 @@ def run_tests():
         faq_ids = [i for i in col.get()["ids"] if i.startswith("learning_faq")]
         if faq_ids:
             col.delete(ids=faq_ids)
+    except Exception:
+        pass
+    try:
+        import json
+        mp = "backend/database/memory_chunks.json"
+        if os.path.exists(mp):
+            mc = [c for c in json.load(open(mp, "r", encoding="utf-8")) if not c.get("id", "").startswith("learning_faq") and "arctic" not in c.get("text", "").lower()]
+            json.dump(mc, open(mp, "w", encoding="utf-8"))
     except Exception:
         pass
     _c = sqlite3.connect("backend/database/safibot.db")

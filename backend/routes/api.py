@@ -185,11 +185,91 @@ def get_profile(current_user: dict = Depends(get_current_user)):
     """Returns current student/admin detailed profile."""
     return UserResponse(**current_user)
 
-@router.get("/dashboard/me")
-def get_my_dashboard(current_user: dict = Depends(get_current_user)):
+# ----------------- Student Profile & Dashboard Helpers -----------------
+def find_student_profile(student_id: Optional[str]) -> Optional[dict]:
     """
-    Returns personalized dashboard data for the authenticated student.
-    Uses student's course, semester, department from SQLite.
+    Robust student profile resolver.
+    Matches student by:
+      - 'guest' (returns campus guest visitor profile)
+      - students.id (e.g. 'STU_BBA_01', 'STU_217292')
+      - students.admission_number (e.g. 'ADM2024BBA01', '217292')
+      - students.email (e.g. 'ajsal@gmail.com')
+      - users.id (auto-increment integer e.g. 7 or '7')
+      - users.admission_number / email
+    """
+    if not student_id:
+        return None
+        
+    s_id = str(student_id).strip()
+    if s_id.lower() == "guest":
+        return {
+            "id": "guest",
+            "name": "Guest Visitor",
+            "roll_number": "GUEST",
+            "admission_number": "GUEST",
+            "email": "guest@sias.edu.in",
+            "course": "ALL",
+            "department": "Campus Visitor",
+            "semester": 1,
+            "batch": "2024-2027",
+            "interests": "College Programmes, Facilities & Admissions",
+            "role": "GUEST"
+        }
+        
+    conn = get_connection()
+    cursor = conn.cursor()
+    
+    # 1. Search in students table
+    cursor.execute("""
+        SELECT * FROM students 
+        WHERE id = ? 
+           OR admission_number = ? 
+           OR LOWER(email) = ? 
+           OR id = ?;
+    """, (s_id, s_id, s_id.lower(), f"STU_{s_id}"))
+    row = cursor.fetchone()
+    if row:
+        conn.close()
+        return dict(row)
+        
+    # 2. Search in users table
+    cursor.execute("""
+        SELECT * FROM users 
+        WHERE id = ? 
+           OR admission_number = ? 
+           OR LOWER(email) = ?;
+    """, (s_id, s_id, s_id.lower()))
+    user_row = cursor.fetchone()
+    if user_row:
+        u = dict(user_row)
+        adm = u.get("admission_number") or ""
+        em = u.get("email") or ""
+        # Check if linked row exists in students
+        cursor.execute("SELECT * FROM students WHERE admission_number = ? OR LOWER(email) = ?;", (adm, em.lower()))
+        s_row = cursor.fetchone()
+        conn.close()
+        if s_row:
+            return dict(s_row)
+        else:
+            return {
+                "id": f"STU_{adm}" if adm else str(u["id"]),
+                "name": u["name"],
+                "roll_number": u.get("roll_number", ""),
+                "admission_number": adm,
+                "email": em,
+                "course": u.get("course", "ALL"),
+                "department": u.get("department", "ALL"),
+                "semester": u.get("semester", 1),
+                "batch": u.get("batch", ""),
+                "interests": u.get("interests", "")
+            }
+
+    conn.close()
+    return None
+
+def build_dashboard_data(student_profile: dict) -> dict:
+    """
+    Builds structured, personalized dashboard payload for a student or guest visitor.
     """
     conn = get_connection()
     cursor = conn.cursor()
@@ -197,20 +277,20 @@ def get_my_dashboard(current_user: dict = Depends(get_current_user)):
     # 1. Notices
     cursor.execute("SELECT * FROM notices WHERE is_approved = 1 ORDER BY date DESC;")
     all_notices = [dict(r) for r in cursor.fetchall()]
-    personalized_notices = filter_items_for_student(current_user, all_notices)
+    personalized_notices = filter_items_for_student(student_profile, all_notices)
     
     # 2. Events
     cursor.execute("SELECT * FROM events WHERE is_approved = 1 ORDER BY date ASC;")
     all_events = [dict(r) for r in cursor.fetchall()]
-    personalized_events = filter_items_for_student(current_user, all_events)
+    personalized_events = filter_items_for_student(student_profile, all_events)
     
     # 3. Deadlines
     deadlines = [n for n in personalized_notices if n.get("deadline")]
     event_deadlines = [e for e in personalized_events if e.get("registration_deadline")]
     
     # 4. Next Exam
-    course = current_user.get("course") or "BBA"
-    sem = current_user.get("semester") or 1
+    course = student_profile.get("course") or "ALL"
+    sem = student_profile.get("semester") or 1
     next_exam = get_next_exam_for_student(course, sem)
     
     # 5. Documents
@@ -224,7 +304,7 @@ def get_my_dashboard(current_user: dict = Depends(get_current_user)):
     conn.close()
     
     return {
-        "student": current_user,
+        "student": student_profile,
         "notices": personalized_notices[:5],
         "events": personalized_events[:5],
         "deadlines": deadlines[:5],
@@ -232,6 +312,14 @@ def get_my_dashboard(current_user: dict = Depends(get_current_user)):
         "next_exam": next_exam,
         "documents": relevant_docs[:5]
     }
+
+@router.get("/dashboard/me")
+def get_my_dashboard(current_user: dict = Depends(get_current_user)):
+    """
+    Returns personalized dashboard data for the authenticated student.
+    Uses student's course, semester, department from SQLite.
+    """
+    return build_dashboard_data(current_user)
 
 @router.get("/deadlines", response_model=List[DeadlineResponse])
 def get_deadlines(course: Optional[str] = None, semester: Optional[int] = None):
@@ -396,79 +484,28 @@ def get_students():
 
 @router.get("/students/{student_id}", response_model=StudentResponse)
 def get_student(student_id: str):
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM students WHERE id = ?;", (student_id,))
-    row = cursor.fetchone()
-    conn.close()
-    if not row:
+    student = find_student_profile(student_id)
+    if not student:
         raise HTTPException(status_code=404, detail="Student not found")
-    return dict(row)
+    return StudentResponse(**student)
 
 # ----------------- Dashboard -----------------
 @router.get("/dashboard/{student_id}")
-def get_student_dashboard(student_id: str):
-    conn = get_connection()
-    cursor = conn.cursor()
-    
-    # 1. Student Profile (Supports Guest Mode)
-    if student_id.lower() == "guest":
-        student = {
-            "id": "guest",
-            "name": "Guest Visitor",
-            "roll_number": "GUEST",
-            "admission_number": "GUEST",
-            "email": "guest@sias.edu.in",
-            "course": "ALL",
-            "department": "Campus Visitor",
-            "semester": 1,
-            "batch": "2024-2027",
-            "interests": "College Programmes, Facilities & Admissions"
-        }
+def get_student_dashboard(student_id: str, current_user: Optional[dict] = Depends(get_optional_user)):
+    user_dict = current_user if isinstance(current_user, dict) else None
+    s_id = str(student_id).strip()
+    if s_id.lower() == "me" and user_dict:
+        student = user_dict
     else:
-        cursor.execute("SELECT * FROM students WHERE id = ?;", (student_id,))
-        student_row = cursor.fetchone()
-        if not student_row:
-            conn.close()
-            raise HTTPException(status_code=404, detail="Student not found")
-        student = dict(student_row)
-    
-    # 2. Notices
-    cursor.execute("SELECT * FROM notices WHERE is_approved = 1 ORDER BY date DESC;")
-    all_notices = [dict(r) for r in cursor.fetchall()]
-    personalized_notices = filter_items_for_student(student, all_notices)
-    
-    # 3. Events
-    cursor.execute("SELECT * FROM events WHERE is_approved = 1 ORDER BY date ASC;")
-    all_events = [dict(r) for r in cursor.fetchall()]
-    personalized_events = filter_items_for_student(student, all_events)
-    
-    # 4. Deadlines
-    deadlines = [n for n in personalized_notices if n.get("deadline")]
-    event_deadlines = [e for e in personalized_events if e.get("registration_deadline")]
-    
-    # 5. Next Exam
-    next_exam = get_next_exam_for_student(student["course"], student["semester"])
-    
-    # 6. Academic Documents
-    cursor.execute("SELECT * FROM documents ORDER BY upload_date DESC;")
-    all_docs = [dict(r) for r in cursor.fetchall()]
-    relevant_docs = [
-        d for d in all_docs
-        if d.get("course") == "ALL" or d.get("course") == student["course"]
-    ]
-    
-    conn.close()
-    
-    return {
-        "student": student,
-        "notices": personalized_notices[:5],
-        "events": personalized_events[:5],
-        "deadlines": deadlines[:5],
-        "event_deadlines": event_deadlines[:5],
-        "next_exam": next_exam,
-        "documents": relevant_docs[:5]
-    }
+        student = find_student_profile(s_id)
+        if not student and user_dict:
+            student = user_dict
+            
+    if not student:
+        # Graceful fallback to guest profile so the dashboard never crashes with 404
+        student = find_student_profile("guest")
+        
+    return build_dashboard_data(student)
 
 # ----------------- Notices -----------------
 @router.get("/notices", response_model=List[NoticeResponse])
@@ -477,14 +514,13 @@ def get_notices(student_id: Optional[str] = None):
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM notices WHERE is_approved = 1 ORDER BY date DESC;")
     notices = [dict(r) for r in cursor.fetchall()]
+    conn.close()
     
     if student_id:
-        cursor.execute("SELECT * FROM students WHERE id = ?;", (student_id,))
-        student_row = cursor.fetchone()
-        if student_row:
-            notices = filter_items_for_student(dict(student_row), notices)
+        student = find_student_profile(student_id)
+        if student:
+            notices = filter_items_for_student(student, notices)
             
-    conn.close()
     return notices
 
 @router.post("/notices", response_model=NoticeResponse)
@@ -542,14 +578,13 @@ def get_events(student_id: Optional[str] = None):
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM events WHERE is_approved = 1 ORDER BY date ASC;")
     events = [dict(r) for r in cursor.fetchall()]
+    conn.close()
     
     if student_id:
-        cursor.execute("SELECT * FROM students WHERE id = ?;", (student_id,))
-        student_row = cursor.fetchone()
-        if student_row:
-            events = filter_items_for_student(dict(student_row), events)
+        student = find_student_profile(student_id)
+        if student:
+            events = filter_items_for_student(student, events)
             
-    conn.close()
     return events
 
 @router.post("/events", response_model=EventResponse)
@@ -834,16 +869,11 @@ def handle_chat(req: ChatRequest, current_user: Optional[dict] = Depends(get_opt
     """
     # 1. Resolve Student Context
     student = None
-    conn = get_connection()
-    cursor = conn.cursor()
-    
     if req.student_id:
-        cursor.execute("SELECT * FROM students WHERE id = ? OR admission_number = ?;", (req.student_id, req.student_id))
-        row = cursor.fetchone()
-        if row:
-            student = dict(row)
-    elif current_user:
-        student = current_user
+        student = find_student_profile(req.student_id)
+    user_dict = current_user if isinstance(current_user, dict) else None
+    if not student and user_dict:
+        student = user_dict
             
     course = (req.course or (student.get("course") if student else "BBA")).strip()
     semester = req.semester or (student.get("semester") if student else 3)
@@ -884,6 +914,9 @@ def handle_chat(req: ChatRequest, current_user: Optional[dict] = Depends(get_opt
     intent = classify_query_intent(req.message)
     
     # 3. Handle by Intent
+    conn = get_connection()
+    cursor = conn.cursor()
+    
     if intent == "exam_timetable":
         rows = get_timetable_rows(course=course, semester=semester, is_exam=1)
         if not rows:
@@ -962,31 +995,40 @@ def handle_chat(req: ChatRequest, current_user: Optional[dict] = Depends(get_opt
             sources=[ChatSource(title=e.get("source", "College Event Circular"), document_type="event") for e in rel_events[:2]]
         )
 
-    elif intent == "deadlines_notices":
+    elif intent in ["deadlines_notices", "notices"]:
         cursor.execute("SELECT * FROM notices WHERE is_approved = 1 ORDER BY date DESC;")
         all_notices = [dict(r) for r in cursor.fetchall()]
         student_obj = student or {"course": course, "semester": semester, "department": department}
         rel_notices = filter_items_for_student(student_obj, all_notices)
         conn.close()
         
-        deadlines = [n for n in rel_notices if n.get("deadline")]
-        if not deadlines and not rel_notices:
+        target_list = rel_notices if rel_notices else all_notices
+        if intent == "deadlines_notices":
+            deadlines = [n for n in target_list if n.get("deadline")]
+            target_list = deadlines if deadlines else target_list
+            header = f"### Upcoming Deadlines & Important Notices ({course})"
+        else:
+            header = f"### Latest Official College News & Announcements ({course})"
+            
+        if not target_list:
             return respond(
-                answer=f"You have no pending deadlines or urgent notices for {course} Semester {semester}.",
-                query_type="deadlines_notices",
+                answer=f"There are currently no active notices or announcements for {course} Semester {semester}.",
+                query_type=intent,
                 data=[],
                 sources=[]
             )
             
-        lines = [f"### Upcoming Deadlines & Important Notices"]
-        for n in (deadlines if deadlines else rel_notices[:3]):
-            lines.append(f"- **{n['title']}** ({n['category']})\n  - {n['content']}\n  - **Deadline:** {n.get('deadline', 'N/A')}\n  - **Source:** {n.get('source', 'Notice Board')}")
+        lines = [header]
+        for n in target_list[:4]:
+            category_tag = f"[{n.get('category', 'Notice').upper()}]"
+            deadline_str = f" | **Deadline:** {n['deadline']}" if n.get("deadline") else ""
+            lines.append(f"- **{category_tag} {n['title']}**\n  - {n['content']}\n  - **Date:** {n.get('date', 'Recent')}{deadline_str}\n  - **Reference:** {n.get('source', 'Official Notice Board')}")
             
         return respond(
             answer="\n".join(lines),
-            query_type="deadlines_notices",
-            data=deadlines or rel_notices,
-            sources=[ChatSource(title=n.get("source", "Notice Board"), document_type="notice") for n in (deadlines or rel_notices)[:2]]
+            query_type=intent,
+            data=target_list,
+            sources=[ChatSource(title=n.get("source", "Official Notice Board"), document_type="notice", details=f"{n['title']} ({n.get('date', 'Recent')})") for n in target_list[:3]]
         )
 
     elif intent in ["website_structured", "website_rag", "website_hybrid"]:
@@ -1082,15 +1124,10 @@ def test_retrieval_diagnostic(req: ChatRequest, current_user: Optional[dict] = D
     """
     student = None
     if req.student_id:
-        conn = get_connection()
-        c = conn.cursor()
-        c.execute("SELECT * FROM students WHERE id = ? OR admission_number = ?;", (req.student_id, req.student_id))
-        row = c.fetchone()
-        conn.close()
-        if row:
-            student = dict(row)
-    elif current_user:
-        student = current_user
+        student = find_student_profile(req.student_id)
+    user_dict = current_user if isinstance(current_user, dict) else None
+    if not student and user_dict:
+        student = user_dict
 
     result = execute_college_retrieval(req.message, student)
 

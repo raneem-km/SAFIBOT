@@ -109,10 +109,14 @@ export async function fetchStudents() {
 }
 
 export async function fetchDashboard(studentId) {
-  const res = await fetch(`${API_BASE}/dashboard/${studentId}`, {
+  const targetId = studentId || 'guest';
+  const res = await fetch(`${API_BASE}/dashboard/${targetId}`, {
     headers: getHeaders(),
   });
-  if (!res.ok) throw new Error('Failed to load dashboard data');
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.detail || 'Failed to load dashboard data');
+  }
   return res.json();
 }
 
