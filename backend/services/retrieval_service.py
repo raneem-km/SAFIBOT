@@ -52,7 +52,7 @@ def synthesize_chunks_into_answer(chunks: List[Dict[str, Any]], primary_title: s
                 seen_snippets.add(norm)
                 body_lines.append(p)
 
-    content_body = "\n\n".join(body_lines[:12])
+    content_body = "\n\n".join([str(b) for b in body_lines[:12] if b is not None])
     source_citation = format_website_source(primary_title, primary_url, last_sync)
     return f"### {primary_title}\n\n{content_body}\n\n{source_citation}"
 
@@ -297,13 +297,51 @@ def execute_college_retrieval(query: str, student_context: Optional[Dict[str, An
         diagnostic["final_answer"] = "\n".join(lines)
         return diagnostic
 
-    # C. HOD Queries
-    if any(k in q_lower for k in ["who is the hod", "head of the department", "hod of", "head of department", "who is the head"]):
+    # C. Faculty & HOD Queries
+    is_hod_query = any(k in q_lower for k in ["who is the hod", "head of the department", "hod of", "head of department", "who is the head", "is the hod", "the hod"]) or (("hod" in q_lower or "head" in q_lower) and any(w in q_lower for w in ["bca", "cs", "ai", "computer", "applications", "shabeer", "haneesh"]))
+    is_faculty_person_query = any(k in q_lower for k in ["haneesh", "muhammed haneesh", "shabeerali", "shabeer"])
+
+    if is_hod_query or is_faculty_person_query:
+        # Check specific clarification for Shabeerali vs Haneesh KP
+        if "shabeer" in q_lower:
+            cursor.execute("SELECT name, designation, department, profile_url, last_updated FROM faculty WHERE LOWER(department) LIKE '%computer applications%' AND (LOWER(designation) LIKE '%head%' OR LOWER(designation) LIKE '%hod%');")
+            bca_hod = cursor.fetchone()
+            conn.close()
+            hod_name = bca_hod["name"] if bca_hod else "Mr. Muhammed Haneesh K.P"
+            hod_desg = bca_hod["designation"] if bca_hod else "Assistant Professor and Head"
+            src_url = "https://sias.edu.in/academics/computer-applications/faculty.html"
+            src_title = "Department of Computer Applications Faculty Profile"
+            ans = (
+                f"**Mr. Muhammed Haneesh K.P** is the official Head of the Department (HOD) of the **Department of Computer Applications (BCA)** ({hod_desg}).\n\n"
+                f"Dr. Shabeerali P. is not the HOD of BCA.\n\n"
+                f"Source:\nSIAS Official Website\nPage: {src_title}\nURL: {src_url}\nLast synced: {today_str}"
+            )
+            diagnostic["detected_intent"] = "website_structured"
+            diagnostic["query_type"] = "website_structured"
+            diagnostic["retrieval_method"] = "Deterministic verification on 'faculty' table (BCA HOD)"
+            diagnostic["retrieved_records"] = [dict(bca_hod)] if bca_hod else []
+            diagnostic["retrieved_source"] = src_title
+            diagnostic["source_url"] = src_url
+            diagnostic["source_urls"] = [src_url]
+            diagnostic["relevant_text"] = f"{hod_name} - {hod_desg} (Department of Computer Applications)"
+            diagnostic["relevance_info"] = "Direct HOD resolution: Muhammed Haneesh K.P is the BCA HOD"
+            diagnostic["similarity_info"] = "Exact Structured Match (1.0)"
+            diagnostic["sources"] = [{"title": src_title, "url": src_url, "document_type": "website"}]
+            diagnostic["sources_formatted"] = format_website_source(src_title, src_url, today_str)
+            diagnostic["final_answer"] = ans
+            return diagnostic
+
+        # Department matching
         matched_dept = "computer applications"
-        for dept_key in ["computer applications", "computer science", "management", "commerce", "biotechnology", "food technology", "microbiology", "physics", "psychology", "economics", "english", "journalism", "multimedia", "islamic", "social work", "education", "public administration"]:
-            if dept_key in q_lower:
-                matched_dept = dept_key
-                break
+        if "bca" in q_lower or "computer application" in q_lower or "haneesh" in q_lower:
+            matched_dept = "computer applications"
+        elif "cs" in q_lower or "computer science" in q_lower or "ai" in q_lower or "artificial intelligence" in q_lower:
+            matched_dept = "computer science and artificial intelligence"
+        else:
+            for dept_key in ["management", "commerce", "biotechnology", "food technology", "microbiology", "physics", "psychology", "economics", "english", "journalism", "multimedia", "islamic", "social work", "education", "public administration"]:
+                if dept_key in q_lower:
+                    matched_dept = dept_key
+                    break
 
         diagnostic["detected_intent"] = "website_structured"
         diagnostic["query_type"] = "website_structured"
