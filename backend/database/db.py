@@ -1,4 +1,4 @@
-﻿import sqlite3
+import sqlite3
 import os
 from typing import List, Dict, Any, Optional
 

@@ -1,4 +1,4 @@
-﻿import sys
+import sys
 import os
 
 # Add root directory to sys.path so backend imports work properly
