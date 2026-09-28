@@ -569,7 +569,7 @@ def seed_demo_data():
     try:
         from backend.services.rag import index_document_chunks, get_collection
         col = get_collection()
-        res = col.get(where={"doc_type": "notice"})
+        res = col.get(where={"doc_type": "notice"}) if col else None
         if not res or not res.get("ids"):
             conn_notices = get_connection()
             cur_notices = conn_notices.cursor()
@@ -623,5 +623,6 @@ if __name__ == "__main__":
     init_db()
     seed_demo_data()
     print("Database initialized and demo data seeded successfully.")
+
 
 
