@@ -38,7 +38,11 @@ from backend.services.auth import (
 
 router = APIRouter()
 
-UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
+IS_VERCEL = os.getenv("VERCEL") == "1" or os.getenv("VERCEL_ENV") is not None
+if IS_VERCEL:
+    UPLOAD_DIR = os.path.join("/tmp", "uploads")
+else:
+    UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 # ----------------- Authentication & Profile -----------------
