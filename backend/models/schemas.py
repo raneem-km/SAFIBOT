@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional, Any
+from typing import List, Optional, Any, Union
 
 class StudentBase(BaseModel):
     id: str
@@ -106,10 +106,10 @@ class ExtractedAnnouncement(BaseModel):
     source: Optional[str] = "WhatsApp Announcement"
 
 class ChatRequest(BaseModel):
-    student_id: Optional[str] = None
+    student_id: Optional[Union[str, int]] = None
     message: str
     course: Optional[str] = None
-    semester: Optional[int] = None
+    semester: Optional[Union[str, int]] = None
     department: Optional[str] = None
 
 class ChatSource(BaseModel):

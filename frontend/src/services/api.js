@@ -52,7 +52,17 @@ async function safeParseJson(res, defaultErrorMsg = 'Request failed') {
     throw new Error('Received unexpected non-JSON response from server');
   }
   if (!res.ok) {
-    throw new Error(data.detail || data.message || defaultErrorMsg);
+    let msg = defaultErrorMsg;
+    if (typeof data.detail === 'string') {
+      msg = data.detail;
+    } else if (Array.isArray(data.detail)) {
+      msg = data.detail.map((d) => d.msg || JSON.stringify(d)).join(', ');
+    } else if (data.detail && typeof data.detail === 'object') {
+      msg = JSON.stringify(data.detail);
+    } else if (data.message) {
+      msg = data.message;
+    }
+    throw new Error(msg);
   }
   return data;
 }
@@ -161,10 +171,10 @@ export async function sendChatMessage(studentId, message, course = null, semeste
     method: 'POST',
     headers: getHeaders(),
     body: JSON.stringify({
-      student_id: studentId,
+      student_id: studentId != null ? String(studentId) : null,
       message,
-      course,
-      semester,
+      course: course || null,
+      semester: semester != null ? Number(semester) : null,
     }),
   });
   return safeParseJson(res, 'Chat message failed');
