@@ -16,17 +16,33 @@ if IS_VERCEL:
 else:
     DB_PATH = ORIGINAL_DB_PATH
 
-def get_connection():
-    if IS_VERCEL and not os.path.exists(DB_PATH):
-        init_db()
-        seed_demo_data()
+def _connect():
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
 
-def init_db():
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-    conn = get_connection()
+_is_initializing = False
+
+def get_connection():
+    global _is_initializing
+    # Auto-initialize and seed if the database file does not exist yet (e.g. fresh Vercel cold-start)
+    if not os.path.exists(DB_PATH) and not _is_initializing:
+        _is_initializing = True
+        try:
+            init_db()
+            seed_demo_data()
+        except Exception as e:
+            print(f"Database auto-initialization note: {e}")
+        finally:
+            _is_initializing = False
+    return _connect()
+
+def init_db(conn=None):
+    should_close = False
+    if conn is None:
+        conn = _connect()
+        should_close = True
     cursor = conn.cursor()
     
     # Students Table (Structured / Private)
@@ -292,11 +308,15 @@ def init_db():
     """)
     
     conn.commit()
-    conn.close()
+    if should_close:
+        conn.close()
 
-def seed_demo_data():
+def seed_demo_data(conn=None):
     """Seed initial demo students, notices, events, timetables if empty."""
-    conn = get_connection()
+    should_close = False
+    if conn is None:
+        conn = _connect()
+        should_close = True
     cursor = conn.cursor()
     
     cursor.execute("SELECT COUNT(*) FROM students;")
@@ -727,7 +747,6 @@ def seed_demo_data():
         """, demo_users)
 
     conn.commit()
-    conn.close()
 
     # Index college notices into ChromaDB for semantic retrieval
     try:
@@ -735,11 +754,8 @@ def seed_demo_data():
         col = get_collection()
         res = col.get(where={"doc_type": "notice"}) if col else None
         if not res or not res.get("ids"):
-            conn_notices = get_connection()
-            cur_notices = conn_notices.cursor()
-            cur_notices.execute("SELECT * FROM notices WHERE is_approved = 1;")
-            notices = [dict(r) for r in cur_notices.fetchall()]
-            conn_notices.close()
+            cursor.execute("SELECT * FROM notices WHERE is_approved = 1;")
+            notices = [dict(r) for r in cursor.fetchall()]
             notice_chunks = []
             for n in notices:
                 chunk_text = (
@@ -772,16 +788,16 @@ def seed_demo_data():
         print(f"Notice Chroma indexing note: {e}")
 
     # Seed initial sample unanswered question in learning_queue if empty
-    conn_q = get_connection()
-    cur_q = conn_q.cursor()
-    cur_q.execute("SELECT COUNT(*) FROM learning_queue;")
-    if cur_q.fetchone()[0] == 0:
-        cur_q.execute("""
+    cursor.execute("SELECT COUNT(*) FROM learning_queue;")
+    if cursor.fetchone()[0] == 0:
+        cursor.execute("""
         INSERT INTO learning_queue (question, user_id, status, timestamp)
         VALUES ('Is there a bus facility from Nilambur to campus?', 'STU_BBA_01', 'UNANSWERED', '2026-09-27 21:00:00');
         """)
-        conn_q.commit()
-    conn_q.close()
+        conn.commit()
+
+    if should_close:
+        conn.close()
 
 if __name__ == "__main__":
     init_db()

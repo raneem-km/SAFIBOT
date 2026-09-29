@@ -1,5 +1,5 @@
 // API Client for SafiBot Backend
-const API_BASE = '/api';
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || '/api').replace(/\/+$/, '');
 
 const TOKEN_KEY = 'safibot_auth_token';
 const USER_KEY = 'safibot_auth_user';
@@ -95,16 +95,14 @@ export async function fetchUserProfile() {
   const res = await fetch(`${API_BASE}/profile`, {
     headers: getHeaders(),
   });
-  if (!res.ok) throw new Error('Failed to load profile');
-  return res.json();
+  return safeParseJson(res, 'Failed to load profile');
 }
 
 export async function fetchMyDashboard() {
   const res = await fetch(`${API_BASE}/dashboard/me`, {
     headers: getHeaders(),
   });
-  if (!res.ok) throw new Error('Failed to load personalized dashboard');
-  return res.json();
+  return safeParseJson(res, 'Failed to load personalized dashboard');
 }
 
 // ----------------- Public & Data Endpoints -----------------
@@ -112,8 +110,7 @@ export async function fetchStudents() {
   const res = await fetch(`${API_BASE}/students`, {
     headers: getHeaders(),
   });
-  if (!res.ok) throw new Error('Failed to load students');
-  return res.json();
+  return safeParseJson(res, 'Failed to load students');
 }
 
 export async function fetchDashboard(studentId) {
@@ -121,25 +118,19 @@ export async function fetchDashboard(studentId) {
   const res = await fetch(`${API_BASE}/dashboard/${targetId}`, {
     headers: getHeaders(),
   });
-  if (!res.ok) {
-    const errorData = await res.json().catch(() => ({}));
-    throw new Error(errorData.detail || 'Failed to load dashboard data');
-  }
-  return res.json();
+  return safeParseJson(res, 'Failed to load dashboard data');
 }
 
 export async function fetchNotices(studentId = null) {
   const url = studentId ? `${API_BASE}/notices?student_id=${studentId}` : `${API_BASE}/notices`;
   const res = await fetch(url, { headers: getHeaders() });
-  if (!res.ok) throw new Error('Failed to load notices');
-  return res.json();
+  return safeParseJson(res, 'Failed to load notices');
 }
 
 export async function fetchEvents(studentId = null) {
   const url = studentId ? `${API_BASE}/events?student_id=${studentId}` : `${API_BASE}/events`;
   const res = await fetch(url, { headers: getHeaders() });
-  if (!res.ok) throw new Error('Failed to load events');
-  return res.json();
+  return safeParseJson(res, 'Failed to load events');
 }
 
 export async function fetchDeadlines(course = null, semester = null) {
@@ -150,22 +141,19 @@ export async function fetchDeadlines(course = null, semester = null) {
   if (params.length > 0) url += `?${params.join('&')}`;
 
   const res = await fetch(url, { headers: getHeaders() });
-  if (!res.ok) throw new Error('Failed to load deadlines');
-  return res.json();
+  return safeParseJson(res, 'Failed to load deadlines');
 }
 
 export async function fetchTimetable(course, semester, isExam = null) {
   let url = `${API_BASE}/timetable?course=${encodeURIComponent(course)}&semester=${semester}`;
   if (isExam !== null) url += `&is_exam=${isExam}`;
   const res = await fetch(url, { headers: getHeaders() });
-  if (!res.ok) throw new Error('Failed to load timetable');
-  return res.json();
+  return safeParseJson(res, 'Failed to load timetable');
 }
 
 export async function fetchDocuments() {
   const res = await fetch(`${API_BASE}/documents`, { headers: getHeaders() });
-  if (!res.ok) throw new Error('Failed to load documents');
-  return res.json();
+  return safeParseJson(res, 'Failed to load documents');
 }
 
 export async function sendChatMessage(studentId, message, course = null, semester = null) {
@@ -179,8 +167,7 @@ export async function sendChatMessage(studentId, message, course = null, semeste
       semester,
     }),
   });
-  if (!res.ok) throw new Error('Chat message failed');
-  return res.json();
+  return safeParseJson(res, 'Chat message failed');
 }
 
 // ----------------- Administrative Endpoints (Require Admin Auth) -----------------
